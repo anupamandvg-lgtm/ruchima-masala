@@ -1,0 +1,110 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // Admin allowlist — keyed by uid, e.g. admins/i06MiYnQCIaNYKGcYtRBaokQC7G3
+    match /admins/{uid} {
+      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow write: if isAdmin();
+    }
+
+    // Customers own/read their own orders; admins read every order and can update status.
+    // Orders are created SERVER-SIDE ONLY, by the admin SDK after a verified
+    // Razorpay payment (see src/lib/server/paymentIntents.ts) — the admin SDK
+    // bypasses these rules entirely, so denying client `create` here just closes
+    // the leftover client-write path (no legitimate client write should ever
+    // reach this rule). Order ids are randomly generated (src/lib/orderId.ts),
+    // not sequential, so unlike rakus-kitchen there is no meta/counters doc here.
+    match /orders/{orderId} {
+      allow read: if isSignedIn() && (
+        resource.data.customerId == request.auth.uid
+        || isAdmin()
+      );
+      allow create: if false;
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    // Payment intents hold a server-recomputed cart draft between "Razorpay
+    // order created" and "payment verified" — never read or written by a
+    // client directly, only by the admin SDK (which bypasses rules).
+    match /paymentIntents/{intentId} {
+      allow read, write: if false;
+    }
+
+    // Dedupe log for Razorpay webhook deliveries — server-only.
+    match /webhookEvents/{eventId} {
+      allow read, write: if false;
+    }
+
+    // Per-customer order-creation rate limit (rateLimits/{uid}) — holds recent
+    // create-order attempt timestamps. Written only by the admin SDK in
+    // enforceOrderRateLimit, which bypasses rules — so no client should ever
+    // read or write it directly.
+    match /rateLimits/{uid} {
+      allow read, write: if false;
+    }
+
+    // Per-IP rate limit for the public bulk/white-label lead forms
+    // (/api/leads/*) — same reasoning as rateLimits above, server-only.
+    match /leadRateLimits/{key} {
+      allow read, write: if false;
+    }
+
+    // Live per-product pricing (productPricing/{productId}). Public read so
+    // the storefront shows current prices without signing in; only admins
+    // edit via /admin/inventory (src/lib/db.ts's setVariantPricing).
+    match /productPricing/{productId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Live per-product stock (productInventory/{productId}). Public read so
+    // the storefront can hide/gray out out-of-stock variants; only admins
+    // edit (src/lib/db.ts's setVariantInventory / batchSetInventory).
+    // Decrements happen server-side (admin SDK, bypasses rules) inside
+    // finalizePayment's transaction — see src/lib/server/productInventory.ts.
+    match /productInventory/{productId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Shipping-fee policy (shippingConfig/default) — public read (checkout
+    // needs it to show the fee before payment); admin-only write.
+    match /shippingConfig/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // B2B bulk-wholesale leads. Created SERVER-SIDE ONLY via /api/leads/bulk
+    // (public, unauthenticated endpoint — validates/sanitizes, writes via
+    // admin SDK, rate-limited by IP) so the public form never needs a direct
+    // client write path. Only admins read/update the pipeline.
+    match /bulkLeads/{leadId} {
+      allow read, update: if isAdmin();
+      allow create: if false;
+      allow delete: if false;
+    }
+
+    // White-label program leads — same shape/reasoning as bulkLeads above.
+    match /whiteLabelLeads/{leadId} {
+      allow read, update: if isAdmin();
+      allow create: if false;
+      allow delete: if false;
+    }
+
+    // Centralized platform audit logs — read and written by admins, server SDK bypasses rules.
+    match /auditLogs/{logId} {
+      allow read, write: if isAdmin();
+    }
+  }
+}
