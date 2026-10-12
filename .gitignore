@@ -28,3 +28,8 @@ next-env.d.ts
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# cloudflare / opennext
+.open-next
+.wrangler
+.dev.vars
