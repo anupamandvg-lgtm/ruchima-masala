@@ -22,13 +22,15 @@ export function generateStaticParams() {
   return PRODUCT_CATEGORIES.map((category) => ({ category }));
 }
 
-export function generateMetadata({ params }: { params: { category: string } }) {
-  const category = resolveCategory(params.category);
+export async function generateMetadata({ params }: { params: Promise<{ category: string }> }) {
+  const { category: raw } = await params;
+  const category = resolveCategory(raw);
   return { title: category ?? "Shop" };
 }
 
-export default function ShopCategoryPage({ params }: { params: { category: string } }) {
-  const category = resolveCategory(params.category);
+export default async function ShopCategoryPage({ params }: { params: Promise<{ category: string }> }) {
+  const { category: raw } = await params;
+  const category = resolveCategory(raw);
   if (!category) notFound();
 
   const products = PRODUCTS_BY_CATEGORY[category] ?? [];
