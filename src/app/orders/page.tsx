@@ -145,7 +145,7 @@ export default function OrdersPage() {
               </div>
 
               <div className="mt-4">
-                <OrderStatusSteps status={order.status} />
+                <OrderStatusSteps status={order.status} fulfillmentType={order.fulfillmentType} />
               </div>
 
               <ul className="mt-4 divide-y divide-line/60 text-sm">

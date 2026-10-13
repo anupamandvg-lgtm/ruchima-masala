@@ -46,7 +46,7 @@ export function AdminGlobalAlertBanner() {
           <p className="mt-1 text-sm font-semibold text-cumin">{latest.customerName} · {latest.phone}</p>
           <p className="text-xs text-soft mt-0.5">{summary}</p>
           <span className="inline-block mt-2 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-turmericgold/20 text-turmericdark border border-turmericgold/30">
-            Shipped Delivery
+            {latest.fulfillmentType === "pickup" ? "Self Pickup" : "Shipped Delivery"}
           </span>
         </div>
 

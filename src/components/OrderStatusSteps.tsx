@@ -1,6 +1,6 @@
 "use client";
 
-import type { OrderStatus } from "@/types";
+import type { FulfillmentType, OrderStatus } from "@/types";
 import { ORDER_STATUS_FLOW } from "@/types";
 
 interface StepConfig {
@@ -9,8 +9,7 @@ interface StepConfig {
   icon: string;
 }
 
-// Ruchima is delivery-only (no self-pickup concept) — single step list.
-const STEPS: StepConfig[] = [
+const STEPS_DELIVERY: StepConfig[] = [
   { key: "Placed", label: "Placed", icon: "📝" },
   { key: "Paid", label: "Paid", icon: "✅" },
   { key: "Packed", label: "Packed", icon: "📦" },
@@ -18,7 +17,31 @@ const STEPS: StepConfig[] = [
   { key: "Delivered", label: "Delivered", icon: "🏡" },
 ];
 
-export function OrderStatusSteps({ status }: { status: OrderStatus }) {
+// Pickup skips "Shipped" — "Delivered" is relabeled "Picked up" here.
+const STEPS_PICKUP: StepConfig[] = [
+  { key: "Placed", label: "Placed", icon: "📝" },
+  { key: "Paid", label: "Paid", icon: "✅" },
+  { key: "Packed", label: "Packed", icon: "📦" },
+  { key: "Delivered", label: "Picked up", icon: "🏬" },
+];
+
+// ORDER_STATUS_FLOW["Delivered"] is 4, which doesn't index this 4-item
+// pickup array — map pickup-relevant statuses to their own step index instead.
+const PICKUP_STEP_INDEX: Partial<Record<OrderStatus, number>> = {
+  Placed: 0,
+  Paid: 1,
+  Packed: 2,
+  Shipped: 2,
+  Delivered: 3,
+};
+
+export function OrderStatusSteps({
+  status,
+  fulfillmentType = "delivery",
+}: {
+  status: OrderStatus;
+  fulfillmentType?: FulfillmentType;
+}) {
   if (status === "Cancelled") {
     return (
       <div className="rounded-xl border border-terracotta/30 bg-terracotta/5 p-3 text-center text-sm font-semibold text-terracotta">
@@ -34,7 +57,9 @@ export function OrderStatusSteps({ status }: { status: OrderStatus }) {
     );
   }
 
-  const currentStep = ORDER_STATUS_FLOW[status] ?? 0;
+  const isPickup = fulfillmentType === "pickup";
+  const STEPS = isPickup ? STEPS_PICKUP : STEPS_DELIVERY;
+  const currentStep = (isPickup ? PICKUP_STEP_INDEX[status] : ORDER_STATUS_FLOW[status]) ?? 0;
   const pct = STEPS.length > 1 ? (currentStep / (STEPS.length - 1)) * 100 : 100;
 
   return (

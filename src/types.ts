@@ -21,6 +21,10 @@ export const ORDER_STATUS_FLOW: Record<OrderStatus, number> = {
   Refunded: -1,
 };
 
+/** How the customer receives their order: courier delivery, or walk-in pickup
+ *  from the warehouse (see BUSINESS.warehouseAddress in src/lib/config.ts). */
+export type FulfillmentType = "delivery" | "pickup";
+
 /* ── Lead (B2B / white-label) lifecycle ──────────────────────────────── */
 
 export type LeadStatus = "New" | "Contacted" | "Quoted" | "Won" | "Lost";
@@ -189,7 +193,8 @@ export interface Order {
   customerName: string;
   phone: string;
   gstin?: string; // optional, captured for B2B-leaning retail buyers
-  deliveryAddress: string;
+  fulfillmentType: FulfillmentType;
+  deliveryAddress?: string;
   addressComponents?: AddressComponents;
   deliveryMeta?: DeliveryMeta;
   items: OrderLineItem[];

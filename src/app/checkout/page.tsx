@@ -15,7 +15,7 @@ import { toFriendlyErrorMessage } from "@/lib/friendlyErrors";
 import { AddressPicker } from "@/components/AddressPicker";
 import { OrderStatusSteps } from "@/components/OrderStatusSteps";
 import { WhatsAppIcon } from "@/components/icons";
-import type { AddressComponents, Order } from "@/types";
+import type { AddressComponents, FulfillmentType, Order } from "@/types";
 
 type Phase = "form" | "processing" | "verifying" | "done";
 
@@ -117,6 +117,7 @@ export default function CheckoutPage() {
   const [scriptReady, setScriptReady] = useState(false);
   const [scriptError, setScriptError] = useState(false);
 
+  const [fulfillmentType, setFulfillmentType] = useState<FulfillmentType>("delivery");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [addressComponents, setAddressComponents] = useState<AddressComponents | null>(null);
@@ -155,6 +156,12 @@ export default function CheckoutPage() {
   const handleAddressChange = useCallback((addr: AddressComponents | null) => {
     setAddressComponents(addr);
   }, []);
+
+  // Self-pickup pays no shipping fee and the server forces the same — these
+  // must match exactly, or the price_changed 409 guard trips on every pickup
+  // checkout.
+  const effectiveShippingFee = fulfillmentType === "pickup" ? 0 : shippingFeeEstimate;
+  const effectiveGrandTotal = itemTotal + effectiveShippingFee;
 
   /**
    * Step 2 of payment: after Razorpay Checkout.js's `handler` fires with the
@@ -203,7 +210,7 @@ export default function CheckoutPage() {
           currency: order.currency,
           name: BUSINESS.name,
           prefill: { name: order.customerName, contact: order.customerPhone },
-          theme: { color: "#C1502E" },
+          theme: { color: "#7A2E2E" },
           handler: (result) => {
             void verifyPayment(result);
           },
@@ -319,7 +326,7 @@ export default function CheckoutPage() {
         </div>
 
         <div className="mt-8">
-          <OrderStatusSteps status={placedOrder.status} />
+          <OrderStatusSteps status={placedOrder.status} fulfillmentType={placedOrder.fulfillmentType} />
         </div>
 
         <a
@@ -342,16 +349,25 @@ export default function CheckoutPage() {
             <span className="font-bold">{placedOrder.orderId}</span>
           </div>
           <div className="px-5 py-3 text-soft">
-            <span className="block text-xs font-semibold text-soft">Delivery to</span>
-            {placedOrder.addressComponents ? (
+            {placedOrder.fulfillmentType === "pickup" ? (
               <>
+                <span className="block text-xs font-semibold text-soft">Pickup location</span>
+                <span className="block font-semibold text-cumin">{BUSINESS.name}</span>
+                <span className="block text-xs">{BUSINESS.warehouseAddress}</span>
+              </>
+            ) : placedOrder.addressComponents ? (
+              <>
+                <span className="block text-xs font-semibold text-soft">Delivery to</span>
                 <span className="block font-semibold text-cumin">
                   {placedOrder.addressComponents.doorAndBuilding}
                 </span>
                 <span className="block text-xs">{placedOrder.addressComponents.displayAddress}</span>
               </>
             ) : (
-              <span className="block font-semibold text-cumin">{placedOrder.deliveryAddress}</span>
+              <>
+                <span className="block text-xs font-semibold text-soft">Delivery to</span>
+                <span className="block font-semibold text-cumin">{placedOrder.deliveryAddress}</span>
+              </>
             )}
           </div>
           {placedOrder.items.map((it) => (
@@ -396,13 +412,15 @@ export default function CheckoutPage() {
 
     if (!user) return;
 
-    if (!addressComponents) {
-      setError("Please search for your delivery address above.");
-      return;
-    }
-    if (addressComponents.doorAndBuilding.trim().length < 3) {
-      setError("Please enter your flat / floor / building details.");
-      return;
+    if (fulfillmentType === "delivery") {
+      if (!addressComponents) {
+        setError("Please search for your delivery address above.");
+        return;
+      }
+      if (addressComponents.doorAndBuilding.trim().length < 3) {
+        setError("Please enter your flat / floor / building details.");
+        return;
+      }
     }
 
     if (scriptError) {
@@ -426,18 +444,23 @@ export default function CheckoutPage() {
     const requestBody = {
       customerName: name.trim(),
       phone: `+91 ${phone}`,
-      deliveryAddress: [
-        addressComponents.doorAndBuilding,
-        addressComponents.displayAddress,
-        addressComponents.landmark,
-      ].filter(Boolean).join(", "),
-      addressComponents,
+      fulfillmentType,
+      ...(fulfillmentType === "delivery" && addressComponents
+        ? {
+          deliveryAddress: [
+            addressComponents.doorAndBuilding,
+            addressComponents.displayAddress,
+            addressComponents.landmark,
+          ].filter(Boolean).join(", "),
+          addressComponents,
+        }
+        : {}),
       gstin: gstin.trim() || undefined,
       items: lineInputs,
       notes: notes.trim() || undefined,
       // Advisory: the total we showed. The server recomputes prices from scratch
       // and charges its own total; this only lets it flag a mid-session change.
-      clientGrandTotal: grandTotalEstimate,
+      clientGrandTotal: effectiveGrandTotal,
     };
 
     submitting.current = true;
@@ -540,34 +563,81 @@ export default function CheckoutPage() {
             </div>
           </fieldset>
 
-          {/* Delivery address */}
+          {/* Fulfillment method */}
           <fieldset className="card p-5">
-            <legend className="mb-1 text-sm font-semibold text-cumin">Delivery address</legend>
-            <p className="mb-3 text-xs text-soft">
-              Pan-India delivery · Shipping charges may apply below a minimum order value.
-            </p>
-            <AddressPicker value={addressComponents} onChange={handleAddressChange} />
-            {addressComponents && (
-              <div className="mt-2.5 flex items-center justify-between text-xs text-soft">
-                <span>📍 Coordinates saved locally for fast re-ordering</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAddressComponents(null);
-                    if (user?.uid) {
-                      try {
-                        window.localStorage.removeItem(`rm-address-v1-${user.uid}`);
-                      } catch { /* ignore */ }
-                    }
-                  }}
-                  className="font-medium text-paprika underline hover:text-cumin"
-                  title="Right to Erasure under DPDP Act: wipe saved address coordinates from this device"
-                >
-                  Clear saved address
-                </button>
-              </div>
-            )}
+            <legend className="mb-3 text-sm font-semibold text-cumin">How would you like to get your order?</legend>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setFulfillmentType("delivery")}
+                className={`rounded-xl border-2 px-4 py-3 text-left text-sm font-semibold transition ${
+                  fulfillmentType === "delivery"
+                    ? "border-terracotta bg-terracotta/5 text-paprika"
+                    : "border-line text-soft hover:border-terracotta/40"
+                }`}
+              >
+                🚚 Delivery
+                <span className="mt-0.5 block text-xs font-normal text-soft">Shipped to your address</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFulfillmentType("pickup")}
+                className={`rounded-xl border-2 px-4 py-3 text-left text-sm font-semibold transition ${
+                  fulfillmentType === "pickup"
+                    ? "border-terracotta bg-terracotta/5 text-paprika"
+                    : "border-line text-soft hover:border-terracotta/40"
+                }`}
+              >
+                🏬 Self pickup
+                <span className="mt-0.5 block text-xs font-normal text-soft">Collect from our store, free</span>
+              </button>
+            </div>
           </fieldset>
+
+          {/* Delivery address */}
+          {fulfillmentType === "delivery" ? (
+            <fieldset className="card p-5">
+              <legend className="mb-1 text-sm font-semibold text-cumin">Delivery address</legend>
+              <p className="mb-3 text-xs text-soft">
+                Pan-India delivery · Shipping charges may apply below a minimum order value.
+              </p>
+              <AddressPicker value={addressComponents} onChange={handleAddressChange} />
+              {addressComponents && (
+                <div className="mt-2.5 flex items-center justify-between text-xs text-soft">
+                  <span>📍 Coordinates saved locally for fast re-ordering</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAddressComponents(null);
+                      if (user?.uid) {
+                        try {
+                          window.localStorage.removeItem(`rm-address-v1-${user.uid}`);
+                        } catch { /* ignore */ }
+                      }
+                    }}
+                    className="font-medium text-paprika underline hover:text-cumin"
+                    title="Right to Erasure under DPDP Act: wipe saved address coordinates from this device"
+                  >
+                    Clear saved address
+                  </button>
+                </div>
+              )}
+            </fieldset>
+          ) : (
+            <fieldset className="card p-5">
+              <legend className="mb-1 text-sm font-semibold text-cumin">Pickup location</legend>
+              <p className="text-sm font-semibold text-cumin">{BUSINESS.name}</p>
+              <p className="mt-1 text-sm text-soft">{BUSINESS.warehouseAddress}</p>
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${BUSINESS.lat},${BUSINESS.lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-block text-xs font-medium text-paprika underline hover:text-cumin"
+              >
+                📍 View on map
+              </a>
+            </fieldset>
+          )}
 
           {/* Order note */}
           <fieldset className="card p-5">
@@ -626,7 +696,7 @@ export default function CheckoutPage() {
             className="btn btn-terracotta w-full py-4 text-base disabled:opacity-50"
             title={!consentAgreed ? "Please check the consent box above to proceed" : ""}
           >
-            {phase === "processing" ? "Starting payment…" : `Pay ${formatINR(grandTotalEstimate)}`}
+            {phase === "processing" ? "Starting payment…" : `Pay ${formatINR(effectiveGrandTotal)}`}
           </button>
         </form>
 
@@ -653,8 +723,8 @@ export default function CheckoutPage() {
           </ul>
           <div className="mt-3 space-y-1.5 border-t border-line pt-3 text-sm">
             <div className="flex justify-between text-soft"><span>Items</span><span>{formatINR(itemTotal)}</span></div>
-            <div className="flex justify-between text-soft"><span>Shipping</span><span>{formatINR(shippingFeeEstimate)}</span></div>
-            <div className="flex justify-between text-base font-bold"><span>Total (incl. GST)</span><span>{formatINR(grandTotalEstimate)}</span></div>
+            <div className="flex justify-between text-soft"><span>Shipping</span><span>{formatINR(effectiveShippingFee)}</span></div>
+            <div className="flex justify-between text-base font-bold"><span>Total (incl. GST)</span><span>{formatINR(effectiveGrandTotal)}</span></div>
           </div>
           <p className="mt-3 rounded-lg bg-cardamom px-3 py-2 text-xs text-soft">
             💡 Prices shown are GST-inclusive. The exact total (and the GST split) is confirmed by our server at payment time.

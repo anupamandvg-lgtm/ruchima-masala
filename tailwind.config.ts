@@ -8,19 +8,19 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Warm, pigment-forward spice palette
-        cardamom: "#F2E7D5", // cream background
-        cardamomdark: "#E8D9BE",
-        paper: "#FFFCF6",
-        terracotta: "#C1502E",
-        paprika: "#8F3119",
-        turmericgold: "#E8A33D",
-        turmericdark: "#C27F1F",
-        cumin: "#3C2A1E", // ink/text
+        // Warm, pigment-forward spice palette (chili + curry leaf)
+        cardamom: "#FBEFDC", // cream background, brighter/warmer than before
+        cardamomdark: "#F2DFBE",
+        paper: "#FFFBF8",
+        terracotta: "#B3261E", // chili, more saturated/vivid (kept token name for backward-compat styling)
+        paprika: "#8C1C17", // chili hover/darker variant
+        turmericgold: "#B8860B", // deep mustard/amber gold, shifted from Rakus's brighter turmeric gold (kept token name for backward-compat styling)
+        turmericdark: "#846008", // hover/focus ring
+        cumin: "#3A2A22", // ink/text
         soft: "#7A6A58", // muted warm grey
         line: "#DECBAE", // fine borders
-        clove: "#241711", // darkest text
-        ok: "#3E7A4E",
+        clove: "#231512", // darkest text
+        ok: "#2F7A4F",
       },
       fontFamily: {
         display: ["var(--font-display)", "Georgia", "serif"],

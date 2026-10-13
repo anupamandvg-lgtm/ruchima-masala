@@ -9,7 +9,7 @@ import { getIdToken, getIdTokenResult } from "firebase/auth";
 import { auth, db } from "./firebase";
 import { recordAuditLog } from "./auditLogger";
 import type {
-  AddressComponents, BulkLead, DeliveryMeta, LeadStatus, LeadStatusEvent, Order,
+  AddressComponents, BulkLead, DeliveryMeta, FulfillmentType, LeadStatus, LeadStatusEvent, Order,
   OrderLineItem, OrderStatus, ProductInventoryDoc, ProductPricingDoc, StatusEvent,
   WhiteLabelLead,
 } from "@/types";
@@ -25,7 +25,8 @@ import type {
 export interface OrderDraft {
   customerName: string;
   phone: string;
-  deliveryAddress: string;
+  fulfillmentType: FulfillmentType;
+  deliveryAddress?: string;
   addressComponents?: AddressComponents;
   gstin?: string;
   items: OrderLineItem[];
@@ -263,7 +264,8 @@ function mapOrder(docSnap: { id: string; data: () => Record<string, unknown> }):
     customerName: (d.customerName as string) ?? "",
     phone: (d.phone as string) ?? "",
     gstin: (d.gstin as string) ?? undefined,
-    deliveryAddress: (d.deliveryAddress as string) ?? "",
+    fulfillmentType: (d.fulfillmentType as FulfillmentType) ?? "delivery",
+    deliveryAddress: d.deliveryAddress as string | undefined,
     addressComponents: d.addressComponents ? (d.addressComponents as AddressComponents) : undefined,
     deliveryMeta: d.deliveryMeta ? (d.deliveryMeta as DeliveryMeta) : undefined,
     items: (d.items as OrderLineItem[]) ?? [],

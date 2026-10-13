@@ -151,6 +151,36 @@ describe("recomputeCartTotals", () => {
     expect(r.shippingFee).toBe(79); // DEFAULT_SHIPPING_POLICY, not a crash
   });
 
+  it("forces zero shipping fee for self-pickup regardless of itemTotal", async () => {
+    // 200 * 1 = 200, well below the free-shipping threshold — would normally be ₹79.
+    const r = await recomputeCartTotals(
+      [{ productId: "turmeric-powder", variantLabel: "1 kg", qty: 1 }],
+      "29",
+      "pickup",
+    );
+    if ("error" in r) throw new Error(r.error);
+    expect(r.shippingFee).toBe(0);
+    expect(r.grandTotal).toBe(r.itemTotal);
+  });
+
+  it("splits GST as CGST+SGST for self-pickup (treated as an intra-state over-the-counter sale)", async () => {
+    const r = await recomputeCartTotals(
+      [{ productId: "turmeric-powder", variantLabel: "1 kg", qty: 1 }],
+      "29",
+      "pickup",
+    );
+    if ("error" in r) throw new Error(r.error);
+    expect(r.gstBreakdown.igst).toBe(0);
+    expect(r.gstBreakdown.cgst).toBeGreaterThan(0);
+    expect(r.gstBreakdown.cgst).toBeCloseTo(r.gstBreakdown.sgst, 6);
+  });
+
+  it("defaults to delivery (unconditional shipping fee) when fulfillmentType is omitted", async () => {
+    const r = await recomputeCartTotals([{ productId: "turmeric-powder", variantLabel: "1 kg", qty: 1 }]);
+    if ("error" in r) throw new Error(r.error);
+    expect(r.shippingFee).toBe(79);
+  });
+
   it("sums multiple lines across different products correctly", async () => {
     const r = await recomputeCartTotals([
       { productId: "turmeric-powder", variantLabel: "1 kg", qty: 1 }, // 200

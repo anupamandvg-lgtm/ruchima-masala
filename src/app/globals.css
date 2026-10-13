@@ -75,8 +75,8 @@
 /* Admin new-order/lead alert: a slow, insistent pulse — hard to miss but not
    frantic. Applied to the alert banner while unacknowledged items are queued. */
 @keyframes pulse-alert {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(193, 80, 46, 0.55); transform: scale(1); }
-  50%      { box-shadow: 0 0 0 12px rgba(193, 80, 46, 0);   transform: scale(1.01); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(122, 46, 46, 0.55); transform: scale(1); }
+  50%      { box-shadow: 0 0 0 12px rgba(122, 46, 46, 0);   transform: scale(1.01); }
 }
 .animate-pulse-alert {
   animation: pulse-alert 1.6s ease-out infinite;

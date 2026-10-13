@@ -9,7 +9,7 @@ import { generateUniqueOrderId } from "./orderIdGenerator";
 import { generateInvoicePdf } from "./invoice";
 import type { OrderDraft } from "@/lib/db";
 import type {
-  AddressComponents, DeliveryMeta, GstBreakdown, Order, OrderStatus, PaymentMeta, StatusEvent,
+  AddressComponents, DeliveryMeta, FulfillmentType, GstBreakdown, Order, OrderStatus, PaymentMeta, StatusEvent,
 } from "@/types";
 
 /**
@@ -177,6 +177,7 @@ export async function finalizePayment(params: {
       ...intent.draft,
       orderId,
       customerId: intent.customerId,
+      fulfillmentType: intent.draft.fulfillmentType ?? "delivery",
       gstBreakdown: intent.gstBreakdown,
       status: "Paid" as OrderStatus,
       statusHistory: [
@@ -195,6 +196,7 @@ export async function finalizePayment(params: {
       ...intent.draft,
       orderId,
       customerId: intent.customerId,
+      fulfillmentType: intent.draft.fulfillmentType ?? "delivery",
       gstBreakdown: intent.gstBreakdown,
       status: "Paid" as OrderStatus,
       statusHistory: [
@@ -249,7 +251,8 @@ function mapOrderDoc(id: string, d: Record<string, unknown>): Order {
     customerName: (d.customerName as string) ?? "",
     phone: (d.phone as string) ?? "",
     gstin: d.gstin as string | undefined,
-    deliveryAddress: (d.deliveryAddress as string) ?? "",
+    fulfillmentType: (d.fulfillmentType as FulfillmentType) ?? "delivery",
+    deliveryAddress: d.deliveryAddress as string | undefined,
     addressComponents: d.addressComponents as AddressComponents | undefined,
     deliveryMeta: d.deliveryMeta as DeliveryMeta | undefined,
     items: (d.items as Order["items"]) ?? [],

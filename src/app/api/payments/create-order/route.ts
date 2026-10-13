@@ -4,8 +4,9 @@ import { createRazorpayOrder } from "@/lib/server/razorpay";
 import { createIntent, enforceOrderRateLimit, RateLimitError } from "@/lib/server/paymentIntents";
 import { checkStockAvailability } from "@/lib/server/productInventory";
 import { recomputeCartTotals } from "@/lib/server/productPricing";
+import { BUSINESS } from "@/lib/config";
 import type { OrderDraft } from "@/lib/db";
-import type { AddressComponents } from "@/types";
+import type { AddressComponents, FulfillmentType } from "@/types";
 
 export const runtime = "nodejs";
 
@@ -19,6 +20,7 @@ interface CartLineInput {
 interface CreateOrderBody {
   customerName?: string;
   phone?: string;
+  fulfillmentType?: FulfillmentType;
   deliveryAddress?: string;
   addressComponents?: AddressComponents;
   gstin?: string;
@@ -46,10 +48,17 @@ export async function POST(request: Request) {
 
     const body = (await request.json()) as CreateOrderBody;
 
+    // Normalize up front — also absorbs a stale cached client bundle mid-deploy
+    // that sends no fulfillmentType field at all (defaults to delivery).
+    const fulfillmentType: FulfillmentType = body.fulfillmentType === "pickup" ? "pickup" : "delivery";
+
     if (
-      !body.customerName?.trim() || !body.phone?.trim() || !body.deliveryAddress?.trim()
+      !body.customerName?.trim() || !body.phone?.trim()
       || !Array.isArray(body.items) || body.items.length === 0
     ) {
+      return NextResponse.json({ error: "Missing required order fields" }, { status: 400 });
+    }
+    if (fulfillmentType === "delivery" && !body.deliveryAddress?.trim()) {
       return NextResponse.json({ error: "Missing required order fields" }, { status: 400 });
     }
 
@@ -59,15 +68,21 @@ export async function POST(request: Request) {
       }
     }
 
-    const buyerStateCode = body.addressComponents?.state
-      ? stateNameToCode(body.addressComponents.state)
-      : undefined;
+    // Pickup = an over-the-counter sale at the business's own location, so
+    // place of supply is always the business's own state (CGST+SGST), never
+    // the "no address → IGST" default used for delivery orders.
+    const buyerStateCode = fulfillmentType === "pickup"
+      ? BUSINESS.gstStateCode
+      : body.addressComponents?.state
+        ? stateNameToCode(body.addressComponents.state)
+        : undefined;
 
     // The only source of truth for prices — client-submitted pricePerUnit/lineTotal
     // are ignored entirely.
     const recomputed = await recomputeCartTotals(
       body.items.map((it) => ({ productId: it.productId!, variantLabel: it.variantLabel!, qty: it.qty!, name: it.name })),
       buyerStateCode,
+      fulfillmentType,
     );
     if ("error" in recomputed) {
       return NextResponse.json({ error: recomputed.error }, { status: 400 });
@@ -106,8 +121,10 @@ export async function POST(request: Request) {
     const draft: OrderDraft = {
       customerName: body.customerName.trim(),
       phone: body.phone.trim(),
-      deliveryAddress: body.deliveryAddress.trim(),
-      addressComponents: body.addressComponents,
+      fulfillmentType,
+      ...(fulfillmentType === "delivery"
+        ? { deliveryAddress: body.deliveryAddress!.trim(), addressComponents: body.addressComponents }
+        : {}),
       gstin: body.gstin?.trim() || undefined,
       items: recomputed.items,
       itemTotal: recomputed.itemTotal,

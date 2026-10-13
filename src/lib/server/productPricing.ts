@@ -2,7 +2,7 @@ import "server-only";
 import { adminDb } from "./firebaseAdmin";
 import { productById } from "@/lib/products";
 import { BUSINESS, DEFAULT_SHIPPING_POLICY } from "@/lib/config";
-import type { GstBreakdown, OrderLineItem, ProductPricingDoc, ShippingConfigDoc } from "@/types";
+import type { FulfillmentType, GstBreakdown, OrderLineItem, ProductPricingDoc, ShippingConfigDoc } from "@/types";
 
 /**
  * ── SERVER-SIDE PRICE RECOMPUTATION ──────────────────────────────────────
@@ -81,6 +81,7 @@ function shippingFeeFor(itemTotal: number, policy: { flatFee: number; freeAboveA
 export async function recomputeCartTotals(
   lines: UnpricedLine[],
   buyerStateCode?: string,
+  fulfillmentType: FulfillmentType = "delivery",
 ): Promise<RecomputedCart | { error: string }> {
   if (lines.length === 0) return { error: "Cart is empty" };
 
@@ -132,8 +133,9 @@ export async function recomputeCartTotals(
   const itemTotal = items.reduce((sum, it) => sum + it.lineTotal, 0);
   const taxTotal = items.reduce((sum, it) => sum + inclusiveTax(it.lineTotal, it.gstRatePercent), 0);
   const gstBreakdown = splitGst(taxTotal, buyerStateCode);
-  const policy = await getShippingPolicy();
-  const shippingFee = shippingFeeFor(itemTotal, policy);
+  const shippingFee = fulfillmentType === "pickup"
+    ? 0
+    : shippingFeeFor(itemTotal, await getShippingPolicy());
   const grandTotal = itemTotal + shippingFee;
 
   return { items, itemTotal, taxTotal, gstBreakdown, shippingFee, grandTotal };

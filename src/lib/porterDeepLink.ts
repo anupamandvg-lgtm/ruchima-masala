@@ -106,11 +106,13 @@ export function buildPorterDeepLink(order: Order): {
 
   const dropLat = order.addressComponents?.lat ?? BUSINESS.lat;
   const dropLng = order.addressComponents?.lng ?? BUSINESS.lng;
+  // Only reached for delivery orders (callers gate on fulfillmentType !== "pickup"),
+  // so deliveryAddress is always set in practice — the fallback is defensive only.
   const dropAddress = order.addressComponents
     ? `${order.addressComponents.doorAndBuilding}, ${order.addressComponents.displayAddress}${
         order.addressComponents.landmark ? ` (Landmark: ${order.addressComponents.landmark})` : ""
       }`
-    : order.deliveryAddress;
+    : order.deliveryAddress || NOT_SPECIFIED;
 
   const dropoff: PorterLocationData = {
     name: order.customerName,

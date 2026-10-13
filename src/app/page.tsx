@@ -50,7 +50,7 @@ export default function HomePage() {
       <section className="relative overflow-hidden">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(60rem_30rem_at_80%_-10%,rgba(232,163,61,0.18),transparent),radial-gradient(45rem_25rem_at_10%_110%,rgba(193,80,46,0.14),transparent)]"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(60rem_30rem_at_80%_-10%,rgba(107,122,58,0.18),transparent),radial-gradient(45rem_25rem_at_10%_110%,rgba(122,46,46,0.14),transparent)]"
         />
         <div className="relative mx-auto grid max-w-6xl items-center gap-8 px-4 pb-14 pt-8 sm:py-20 md:grid-cols-2">
           <div>

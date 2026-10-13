@@ -25,7 +25,7 @@ import type { Order } from "@/types";
  */
 
 const styles = StyleSheet.create({
-  page: { padding: 36, fontSize: 9, fontFamily: "Helvetica", color: "#241711" },
+  page: { padding: 36, fontSize: 9, fontFamily: "Helvetica", color: "#231512" },
   headerRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 16 },
   businessName: { fontSize: 16, fontWeight: 700, marginBottom: 2 },
   muted: { color: "#7A6A58", fontSize: 8 },
@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 9, fontWeight: 700, marginBottom: 4, textTransform: "uppercase", color: "#7A6A58" },
   table: { borderTopWidth: 1, borderTopColor: "#DECBAE", marginTop: 4 },
   tr: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: "#DECBAE", paddingVertical: 5 },
-  trHead: { backgroundColor: "#F2E7D5", fontWeight: 700 },
+  trHead: { backgroundColor: "#F0E6DC", fontWeight: 700 },
   cName: { flex: 3 },
   cHsn: { flex: 1.2, textAlign: "center" },
   cQty: { flex: 0.8, textAlign: "center" },
@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
   cTotal: { flex: 1.3, textAlign: "right" },
   totalsBlock: { marginTop: 10, alignSelf: "flex-end", width: 220 },
   totalsRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 2 },
-  grandTotalRow: { flexDirection: "row", justifyContent: "space-between", paddingTop: 6, marginTop: 4, borderTopWidth: 1, borderTopColor: "#241711", fontWeight: 700, fontSize: 11 },
+  grandTotalRow: { flexDirection: "row", justifyContent: "space-between", paddingTop: 6, marginTop: 4, borderTopWidth: 1, borderTopColor: "#231512", fontWeight: 700, fontSize: 11 },
   footer: { marginTop: 24, fontSize: 7.5, color: "#7A6A58", lineHeight: 1.4 },
 });
 
@@ -85,10 +85,16 @@ function InvoiceDocument({ order }: { order: Order }) {
           <Text style={styles.sectionTitle}>Billed / Shipped To</Text>
           <Text>{order.customerName}</Text>
           <Text style={styles.muted}>{order.phone}</Text>
-          <Text style={styles.muted}>{order.deliveryAddress}</Text>
+          {order.fulfillmentType === "pickup" ? (
+            <Text style={styles.muted}>Self-pickup — {BUSINESS.warehouseAddress}</Text>
+          ) : (
+            <Text style={styles.muted}>{order.deliveryAddress}</Text>
+          )}
           {order.gstin ? <Text style={styles.muted}>Buyer GSTIN: {order.gstin}</Text> : null}
           <Text style={styles.muted}>
-            Place of supply: {order.addressComponents?.state || "—"} ({isIntraState ? "Intra-state — CGST+SGST" : "Inter-state — IGST"})
+            Place of supply: {order.fulfillmentType === "pickup"
+              ? "Karnataka (self-pickup) — CGST+SGST"
+              : `${order.addressComponents?.state || "—"} (${isIntraState ? "Intra-state — CGST+SGST" : "Inter-state — IGST"})`}
           </Text>
         </View>
 

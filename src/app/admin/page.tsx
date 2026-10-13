@@ -12,6 +12,7 @@ import { waLinkToCustomer } from "@/lib/whatsapp";
 import { launchPorterAppDeepLink, buildPorterClipboardData } from "@/lib/porterDeepLink";
 import { useAdminAlerts } from "@/lib/admin-alerts-context";
 import { subscribeRecentAuditLogs } from "@/lib/auditLogger";
+import { BUSINESS } from "@/lib/config";
 import type { Order, OrderStatus, AuditLogEntry } from "@/types";
 import { ORDER_STATUSES } from "@/types";
 
@@ -40,6 +41,10 @@ const STATUS_TRANSITIONS: Partial<Record<OrderStatus, OrderStatus[]>> = {
   Cancelled: ["Cancelled"],
   Refunded: ["Refunded"],
 };
+
+/** Pickup orders skip "Shipped" entirely — "Packed" goes straight to "Delivered"
+ *  ("Picked up" in customer-facing copy) or "Cancelled". */
+const PICKUP_PACKED_TRANSITIONS: OrderStatus[] = ["Packed", "Delivered", "Cancelled"];
 
 // Which slice of orders the dashboard shows. Defaults to "active" so finished
 // orders stay out of the way unless asked for.
@@ -357,8 +362,17 @@ export default function AdminPage() {
                 </div>
 
                 <div className="text-soft pt-1">
-                  <span className="font-semibold text-cumin">🚚 Ship to: </span>
-                  {currentAlertOrder.addressComponents?.displayAddress || currentAlertOrder.deliveryAddress}
+                  {currentAlertOrder.fulfillmentType === "pickup" ? (
+                    <>
+                      <span className="font-semibold text-cumin">🏬 Pickup at: </span>
+                      {BUSINESS.warehouseAddress}
+                    </>
+                  ) : (
+                    <>
+                      <span className="font-semibold text-cumin">🚚 Ship to: </span>
+                      {currentAlertOrder.addressComponents?.displayAddress || currentAlertOrder.deliveryAddress}
+                    </>
+                  )}
                 </div>
 
                 {currentAlertOrder.gstin && (
@@ -1076,10 +1090,12 @@ function AdminOrderCard({ order, archived = false }: { order: Order; archived?: 
     }
   };
 
-  /** Show delivery options only once an order is paid and not yet shipped, and no carrier is booked yet. */
+  /** Show delivery options only once an order is paid and not yet shipped, no
+   *  carrier is booked yet, and it's not a self-pickup order (no carrier to book). */
   const canBookDelivery =
     (order.status === "Paid" || order.status === "Packed") &&
-    !order.deliveryMeta?.carrierOrderId;
+    !order.deliveryMeta?.carrierOrderId &&
+    order.fulfillmentType !== "pickup";
 
   return (
     <article className={`card overflow-hidden ${archived ? "opacity-75" : ""}`}>
@@ -1109,7 +1125,12 @@ function AdminOrderCard({ order, archived = false }: { order: Order; archived?: 
           {order.gstin && <p className="text-soft">GSTIN: <span className="text-cumin">{order.gstin}</span></p>}
 
           {/* Delivery address */}
-          {order.addressComponents ? (
+          {order.fulfillmentType === "pickup" ? (
+            <div className="rounded-xl border border-turmericgold/40 bg-turmericgold/10 p-3 text-xs">
+              <p className="font-semibold text-cumin">🏬 Self-pickup</p>
+              <p className="mt-0.5 text-soft">{BUSINESS.warehouseAddress}</p>
+            </div>
+          ) : order.addressComponents ? (
             <div className="rounded-xl border border-line bg-paper p-3 text-xs">
               <p className="font-semibold text-cumin">{order.addressComponents.doorAndBuilding}</p>
               <p className="mt-0.5 text-soft">{order.addressComponents.displayAddress}</p>
@@ -1268,7 +1289,10 @@ function AdminOrderCard({ order, archived = false }: { order: Order; archived?: 
               onChange={(e) => changeStatus(e.target.value as OrderStatus)}
               className="field py-2.5 text-sm font-semibold"
             >
-              {(STATUS_TRANSITIONS[order.status] ?? ORDER_STATUSES).map((s) => (
+              {(order.fulfillmentType === "pickup" && order.status === "Packed"
+                ? PICKUP_PACKED_TRANSITIONS
+                : STATUS_TRANSITIONS[order.status] ?? ORDER_STATUSES
+              ).map((s) => (
                 <option key={s} value={s}>{s}</option>
               ))}
             </select>

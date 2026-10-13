@@ -9,7 +9,10 @@ export const waMeLink = (message?: string) =>
 /** WhatsApp message for a freshly placed order, addressed to the business. */
 export const buildOrderMessage = (order: Order): string => {
   const addressLines: string[] = [];
-  if (order.addressComponents) {
+  if (order.fulfillmentType === "pickup") {
+    addressLines.push("🏬 Self-pickup from our store");
+    addressLines.push(`   ${BUSINESS.warehouseAddress}`);
+  } else if (order.addressComponents) {
     addressLines.push(`📍 Address: ${order.addressComponents.displayAddress}`);
     addressLines.push(`   Flat/Building: ${order.addressComponents.doorAndBuilding}`);
     if (order.addressComponents.landmark) {
@@ -86,17 +89,29 @@ export const STATUS_MESSAGES: Record<OrderStatus, (order: Order) => string> = {
     ].join("\n"),
 
   Packed: (order) =>
-    [
-      "📦 *Ruchima Masala — Order Packed*",
-      "",
-      `Hi ${order.customerName}, great news — your order is packed and ready to ship!`,
-      "",
-      refCard(order),
-      "",
-      "You'll get a message the moment it's handed to our delivery partner.",
-      "",
-      signOff,
-    ].join("\n"),
+    order.fulfillmentType === "pickup"
+      ? [
+        "📦 *Ruchima Masala — Order Packed*",
+        "",
+        `Hi ${order.customerName}, great news — your order is packed and ready for pickup!`,
+        "",
+        refCard(order),
+        "",
+        `Swing by during business hours: ${BUSINESS.warehouseAddress}`,
+        "",
+        signOff,
+      ].join("\n")
+      : [
+        "📦 *Ruchima Masala — Order Packed*",
+        "",
+        `Hi ${order.customerName}, great news — your order is packed and ready to ship!`,
+        "",
+        refCard(order),
+        "",
+        "You'll get a message the moment it's handed to our delivery partner.",
+        "",
+        signOff,
+      ].join("\n"),
 
   Shipped: (order) =>
     [
@@ -113,17 +128,29 @@ export const STATUS_MESSAGES: Record<OrderStatus, (order: Order) => string> = {
     ].join("\n"),
 
   Delivered: (order) =>
-    [
-      "🎉 *Ruchima Masala — Delivered!*",
-      "",
-      `Hi ${order.customerName}, we hope your masalas arrive fresh and full of flavour. Thank you for choosing *Ruchima Masala*! 🧡`,
-      "",
-      `If you loved it, a quick word on Instagram (@${BUSINESS.instagram}) means the world to us. 📸`,
-      "",
-      "We can't wait to serve you again.",
-      "",
-      signOff,
-    ].join("\n"),
+    order.fulfillmentType === "pickup"
+      ? [
+        "🎉 *Ruchima Masala — Picked Up!*",
+        "",
+        `Hi ${order.customerName}, thanks for picking up your order! Hope you enjoy your masalas. Thank you for choosing *Ruchima Masala*! 🧡`,
+        "",
+        `If you loved it, a quick word on Instagram (@${BUSINESS.instagram}) means the world to us. 📸`,
+        "",
+        "We can't wait to serve you again.",
+        "",
+        signOff,
+      ].join("\n")
+      : [
+        "🎉 *Ruchima Masala — Delivered!*",
+        "",
+        `Hi ${order.customerName}, we hope your masalas arrive fresh and full of flavour. Thank you for choosing *Ruchima Masala*! 🧡`,
+        "",
+        `If you loved it, a quick word on Instagram (@${BUSINESS.instagram}) means the world to us. 📸`,
+        "",
+        "We can't wait to serve you again.",
+        "",
+        signOff,
+      ].join("\n"),
 
   Cancelled: (order) =>
     [
