@@ -24,6 +24,7 @@
     "server-only": "^0.0.1"
   },
   "devDependencies": {
+    "@netlify/plugin-nextjs": "^5.16.2",
     "@opennextjs/cloudflare": "^1.20.10",
     "@types/node": "^20.16.11",
     "@types/react": "19.3.0",
