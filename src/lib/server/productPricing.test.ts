@@ -71,7 +71,7 @@ describe("recomputeCartTotals", () => {
   });
 
   it("errors on an unknown variant for a real product", async () => {
-    const r = await recomputeCartTotals([{ productId: "turmeric-powder", variantLabel: "5 kg", qty: 1 }]);
+    const r = await recomputeCartTotals([{ productId: "turmeric-powder", variantLabel: "999 kg", qty: 1 }]);
     expect("error" in r && r.error).toMatch(/Unknown variant/i);
   });
 

@@ -25,7 +25,7 @@ export function Nav() {
   const { totalUnits, setCartOpen } = useCart();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line/70 bg-cardamom/85 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-line bg-white/95 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
         <Link href="/" className="flex items-center gap-2">
           <Image

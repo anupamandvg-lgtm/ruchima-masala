@@ -94,10 +94,33 @@ export function useProductAvailability(): ProductAvailabilityContextValue {
   return ctx;
 }
 
+import { productById } from "./products";
+
 /** Convenience: live selling/original price for one variant, or undefined if untracked. */
 export function useVariantPricing(productId: string, variantLabel: string) {
   const { pricing } = useProductAvailability();
-  return pricing[productId]?.variants?.[variantLabel];
+  const prodDoc = pricing[productId];
+  if (!prodDoc?.variants) return undefined;
+  if (prodDoc.variants[variantLabel]) return prodDoc.variants[variantLabel];
+
+  // Fallback to proportional calculation from any available variant of this product
+  const product = productById(productId);
+  const targetVariant = product?.variants.find((v) => v.label === variantLabel);
+  const anyKey = Object.keys(prodDoc.variants)[0];
+  const anyPricing = anyKey ? prodDoc.variants[anyKey] : undefined;
+  const anyVariant = anyKey && product ? product.variants.find((v) => v.label === anyKey) : undefined;
+  if (targetVariant && anyPricing && anyVariant && anyVariant.weightGrams > 0) {
+    const ratio = targetVariant.weightGrams / anyVariant.weightGrams;
+    let volumeFactor = 1.0;
+    if (targetVariant.weightGrams >= 50000) volumeFactor = 0.80;
+    else if (targetVariant.weightGrams >= 10000) volumeFactor = 0.88;
+    else if (targetVariant.weightGrams >= 5000) volumeFactor = 0.92;
+    return {
+      sellingPrice: Math.round(anyPricing.sellingPrice * ratio * volumeFactor),
+      originalPrice: anyPricing.originalPrice ? Math.round(anyPricing.originalPrice * ratio) : undefined,
+    };
+  }
+  return undefined;
 }
 
 /**

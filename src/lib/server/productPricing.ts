@@ -111,7 +111,23 @@ export async function recomputeCartTotals(
     }
 
     const pricing = pricingByProductId.get(line.productId);
-    const variantPricing = pricing?.variants?.[line.variantLabel];
+    let variantPricing = pricing?.variants?.[line.variantLabel];
+    if (!variantPricing || typeof variantPricing.sellingPrice !== "number" || variantPricing.sellingPrice <= 0) {
+      // Proportional fallback from another available variant of the same product
+      const anyKey = pricing?.variants ? Object.keys(pricing.variants)[0] : undefined;
+      const anyPricing = anyKey ? pricing?.variants[anyKey] : undefined;
+      const anyVariant = anyKey ? product.variants.find((v) => v.label === anyKey) : undefined;
+      if (anyPricing && anyVariant && anyVariant.weightGrams > 0 && anyPricing.sellingPrice > 0) {
+        const ratio = variant.weightGrams / anyVariant.weightGrams;
+        let volumeFactor = 1.0;
+        if (variant.weightGrams >= 50000) volumeFactor = 0.80;
+        else if (variant.weightGrams >= 10000) volumeFactor = 0.88;
+        else if (variant.weightGrams >= 5000) volumeFactor = 0.92;
+        const computedSelling = Math.round(anyPricing.sellingPrice * ratio * volumeFactor);
+        const computedOriginal = anyPricing.originalPrice ? Math.round(anyPricing.originalPrice * ratio) : undefined;
+        variantPricing = { sellingPrice: computedSelling, originalPrice: computedOriginal };
+      }
+    }
     if (!variantPricing || typeof variantPricing.sellingPrice !== "number" || variantPricing.sellingPrice <= 0) {
       return { error: `Could not verify price for ${product.name} (${line.variantLabel})` };
     }

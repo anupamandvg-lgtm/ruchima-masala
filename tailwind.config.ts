@@ -8,27 +8,27 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Warm, pigment-forward spice palette (chili + curry leaf)
-        cardamom: "#FBEFDC", // cream background, brighter/warmer than before
-        cardamomdark: "#F2DFBE",
-        paper: "#FFFBF8",
-        terracotta: "#B3261E", // chili, more saturated/vivid (kept token name for backward-compat styling)
-        paprika: "#8C1C17", // chili hover/darker variant
-        turmericgold: "#B8860B", // deep mustard/amber gold, shifted from Rakus's brighter turmeric gold (kept token name for backward-compat styling)
-        turmericdark: "#846008", // hover/focus ring
-        cumin: "#3A2A22", // ink/text
-        soft: "#7A6A58", // muted warm grey
-        line: "#DECBAE", // fine borders
-        clove: "#231512", // darkest text
-        ok: "#2F7A4F",
+        // Modern clean white quick-commerce palette with vibrant spice accents
+        cardamom: "#FFFFFF", // Pure clean white background
+        cardamomdark: "#F8FAFC", // Crisp subtle light gray section background
+        paper: "#FFFFFF", // Pure white card surfaces
+        terracotta: "#B3261E", // Vibrant spice chili red
+        paprika: "#8C1C17", // Chili red hover
+        turmericgold: "#D97706", // Rich warm amber gold
+        turmericdark: "#B45309", // Amber hover / focus ring
+        cumin: "#0F172A", // Deep slate ink/headings
+        soft: "#475569", // Crisp muted slate description text
+        line: "#E2E8F0", // Modern crisp borders
+        clove: "#020617", // Darkest slate text
+        ok: "#15803D", // Fresh herb green
       },
       fontFamily: {
         display: ["var(--font-display)", "Georgia", "serif"],
         body: ["var(--font-body)", "system-ui", "sans-serif"],
       },
       boxShadow: {
-        card: "0 1px 2px rgba(36,23,17,0.06), 0 8px 24px -12px rgba(36,23,17,0.20)",
-        lift: "0 2px 6px rgba(36,23,17,0.10), 0 18px 40px -18px rgba(36,23,17,0.30)",
+        card: "0 1px 3px 0 rgba(0, 0, 0, 0.07), 0 1px 2px -1px rgba(0, 0, 0, 0.05)",
+        lift: "0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04)",
       },
     },
   },

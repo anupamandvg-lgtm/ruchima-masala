@@ -7,7 +7,7 @@
     scroll-behavior: smooth;
   }
   body {
-    @apply bg-cardamom text-cumin font-body antialiased;
+    @apply bg-white text-cumin font-body antialiased;
   }
   h1, h2, h3, h4 {
     @apply font-display;

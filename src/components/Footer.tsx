@@ -5,7 +5,7 @@ import { waMeLink } from "@/lib/whatsapp";
 
 export function Footer() {
   return (
-    <footer className="border-t border-line/70 bg-cardamomdark/50">
+    <footer className="border-t border-slate-200 bg-slate-50/80">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-3">
           <Image

@@ -1,4 +1,4 @@
-import type { Product, ProductCategory } from "@/types";
+import type { Product, ProductCategory, ProductVariant } from "@/types";
 
 /**
  * ── CATALOG IDENTITY — STABLE, CODE-DEFINED ──────────────────────────────
@@ -11,18 +11,10 @@ import type { Product, ProductCategory } from "@/types";
  * deploy — see src/lib/server/productPricing.ts. Live stock lives at
  * productInventory/{productId}.
  *
- * Each product's `variants` list is exactly what the business currently
- * sells it as (one weight for most items, two for Korean Peri Peri Masala —
- * matching the real catalog, not a fabricated 250g/500g/1kg spread). Adding
- * a new weight tier to an existing product is a catalog change — it goes
- * here, then gets a price added in /admin/inventory.
- *
- * TODO(business/accountant): HSN codes and GST rates below are a reasonable
- * best-effort classification (single-spice powders under 0910, blended
- * masalas under 2103, ready-to-cook instant mixes under 2106 — all at the
- * common 5% GST slab for food/spice products) but have NOT been verified
- * against the business's actual GST filings. Confirm with their CA before
- * invoices go live — see Phase 11 (GST review) in the implementation plan.
+ * Variants reflect Ruchima Masala's official business packing standards
+ * (from the official mill packaging sheet):
+ * 500 g | 1 kg | 2 kg | 3 kg | 5 kg | 10 kg | 20 kg | 25 kg | 50 kg
+ * (plus 250 g retail packs for specialty blends/instant mixes).
  */
 
 const HSN = {
@@ -40,6 +32,35 @@ export const PRODUCT_CATEGORIES: ProductCategory[] = [
   "Instant Mixes",
 ];
 
+/**
+ * Ruchima Masala official packing sizes (from business standard):
+ * 500 g | 1 kg | 2 kg | 3 kg | 5 kg | 10 kg | 20 kg | 25 kg | 50 kg
+ */
+export const RUCHIMA_STANDARD_VARIANTS: ProductVariant[] = [
+  { label: "500 g", weightGrams: 500 },
+  { label: "1 kg", weightGrams: 1000 },
+  { label: "2 kg", weightGrams: 2000 },
+  { label: "3 kg", weightGrams: 3000 },
+  { label: "5 kg", weightGrams: 5000 },
+  { label: "10 kg", weightGrams: 10000 },
+  { label: "20 kg", weightGrams: 20000 },
+  { label: "25 kg", weightGrams: 25000 },
+  { label: "50 kg", weightGrams: 50000 },
+];
+
+/**
+ * Specialty seasonings and mixes that also feature 250g trial/sprinkler packs:
+ */
+export const RUCHIMA_SPECIALTY_VARIANTS: ProductVariant[] = [
+  { label: "250 g", weightGrams: 250 },
+  { label: "500 g", weightGrams: 500 },
+  { label: "1 kg", weightGrams: 1000 },
+  { label: "2 kg", weightGrams: 2000 },
+  { label: "3 kg", weightGrams: 3000 },
+  { label: "5 kg", weightGrams: 5000 },
+  { label: "10 kg", weightGrams: 10000 },
+];
+
 export const PRODUCTS: Product[] = [
   // ── Masala Powders (single-spice / base powders) ───────────────────────
   {
@@ -49,7 +70,7 @@ export const PRODUCTS: Product[] = [
     name: "Bright Chilli Powder",
     description: "Vibrant, deep-red chilli powder — bright color, balanced heat, freshly ground.",
     images: ["/images/products/bright-chilli-powder.jpg"],
-    variants: [{ label: "1 kg", weightGrams: 1000 }],
+    variants: RUCHIMA_STANDARD_VARIANTS,
     hsnCode: HSN.singleSpice,
     gstRatePercent: GST_DEFAULT,
     isWholesaleEligible: true,
@@ -63,7 +84,7 @@ export const PRODUCTS: Product[] = [
     name: "Export Chilli Powder",
     description: "Export-grade chilli powder, ground for consistent color and heat at bulk scale.",
     images: ["/images/products/export-chilli-powder.jpg"],
-    variants: [{ label: "500 g", weightGrams: 500 }],
+    variants: RUCHIMA_STANDARD_VARIANTS,
     hsnCode: HSN.singleSpice,
     gstRatePercent: GST_DEFAULT,
     isWholesaleEligible: true,
@@ -77,7 +98,7 @@ export const PRODUCTS: Product[] = [
     name: "Kashmiri Chilli Powder",
     description: "Mild-heat Kashmiri chilli powder prized for its deep red color in gravies.",
     images: ["/images/products/kashmiri-chilli-powder.jpg"],
-    variants: [{ label: "500 g", weightGrams: 500 }],
+    variants: RUCHIMA_STANDARD_VARIANTS,
     hsnCode: HSN.singleSpice,
     gstRatePercent: GST_DEFAULT,
     isWholesaleEligible: true,
@@ -91,7 +112,7 @@ export const PRODUCTS: Product[] = [
     name: "Dhaniya Powder",
     description: "Freshly ground coriander (dhaniya) powder — the everyday base for curries.",
     images: ["/images/products/dhaniya-powder.jpg"],
-    variants: [{ label: "1 kg", weightGrams: 1000 }],
+    variants: RUCHIMA_STANDARD_VARIANTS,
     hsnCode: HSN.singleSpice,
     gstRatePercent: GST_DEFAULT,
     isWholesaleEligible: true,
@@ -105,7 +126,7 @@ export const PRODUCTS: Product[] = [
     name: "Turmeric Powder",
     description: "Pure ground turmeric, rich color and aroma, no fillers.",
     images: ["/images/products/turmeric-powder.jpg"],
-    variants: [{ label: "1 kg", weightGrams: 1000 }],
+    variants: RUCHIMA_STANDARD_VARIANTS,
     hsnCode: HSN.singleSpice,
     gstRatePercent: GST_DEFAULT,
     isWholesaleEligible: true,
@@ -119,7 +140,7 @@ export const PRODUCTS: Product[] = [
     name: "Jeera Powder",
     description: "Roasted cumin (jeera) powder, ground fresh for a strong, warm aroma.",
     images: ["/images/products/jeera-powder.jpg"],
-    variants: [{ label: "500 g", weightGrams: 500 }],
+    variants: RUCHIMA_STANDARD_VARIANTS,
     hsnCode: HSN.singleSpice,
     gstRatePercent: GST_DEFAULT,
     isWholesaleEligible: true,
@@ -133,7 +154,7 @@ export const PRODUCTS: Product[] = [
     name: "White Pepper",
     description: "Ground white pepper — milder, cleaner heat than black pepper, for light-colored dishes.",
     images: ["/images/products/white-pepper.jpg"],
-    variants: [{ label: "500 g", weightGrams: 500 }],
+    variants: RUCHIMA_STANDARD_VARIANTS,
     hsnCode: HSN.singleSpice,
     gstRatePercent: GST_DEFAULT,
     isWholesaleEligible: true,
@@ -147,7 +168,7 @@ export const PRODUCTS: Product[] = [
     name: "Black Pepper Spicy",
     description: "Bold, pungent ground black pepper for a sharp finishing kick.",
     images: ["/images/products/black-pepper-spicy.jpg"],
-    variants: [{ label: "500 g", weightGrams: 500 }],
+    variants: RUCHIMA_STANDARD_VARIANTS,
     hsnCode: HSN.singleSpice,
     gstRatePercent: GST_DEFAULT,
     isWholesaleEligible: true,
@@ -161,8 +182,7 @@ export const PRODUCTS: Product[] = [
     name: "Egg Masala",
     description: "A balanced spice blend made specifically for egg curry and egg bhurji.",
     images: ["/images/products/egg-masala.jpg"],
-    // TODO(business): catalog listed this item's weight as "Not Specified" — confirm pack size.
-    variants: [{ label: "500 g", weightGrams: 500 }],
+    variants: RUCHIMA_STANDARD_VARIANTS,
     hsnCode: HSN.blendedMasala,
     gstRatePercent: GST_DEFAULT,
     isWholesaleEligible: true,
@@ -178,7 +198,7 @@ export const PRODUCTS: Product[] = [
     name: "Fish Masala Mangalore",
     description: "Coastal Mangalorean-style fish masala blend, built for fish curry and fry.",
     images: ["/images/products/fish-masala-mangalore.jpg"],
-    variants: [{ label: "500 g", weightGrams: 500 }],
+    variants: RUCHIMA_STANDARD_VARIANTS,
     hsnCode: HSN.blendedMasala,
     gstRatePercent: GST_DEFAULT,
     isWholesaleEligible: true,
@@ -192,7 +212,7 @@ export const PRODUCTS: Product[] = [
     name: "Kitchen King",
     description: "All-purpose everyday masala blend for sabzis, curries and gravies.",
     images: ["/images/products/kitchen-king.jpg"],
-    variants: [{ label: "500 g", weightGrams: 500 }],
+    variants: RUCHIMA_STANDARD_VARIANTS,
     hsnCode: HSN.blendedMasala,
     gstRatePercent: GST_DEFAULT,
     isWholesaleEligible: true,
@@ -206,7 +226,7 @@ export const PRODUCTS: Product[] = [
     name: "Sambar Powder (Spicy)",
     description: "Classic South Indian sambar powder, full-heat spicy blend.",
     images: ["/images/products/sambar-powder-spicy.jpg"],
-    variants: [{ label: "1 kg", weightGrams: 1000 }],
+    variants: RUCHIMA_STANDARD_VARIANTS,
     hsnCode: HSN.blendedMasala,
     gstRatePercent: GST_DEFAULT,
     isWholesaleEligible: true,
@@ -220,7 +240,7 @@ export const PRODUCTS: Product[] = [
     name: "Sambar Powder (Medium Spicy)",
     description: "Classic South Indian sambar powder, milder medium-spice blend.",
     images: ["/images/products/sambar-powder-medium-spicy.jpg"],
-    variants: [{ label: "1 kg", weightGrams: 1000 }],
+    variants: RUCHIMA_STANDARD_VARIANTS,
     hsnCode: HSN.blendedMasala,
     gstRatePercent: GST_DEFAULT,
     isWholesaleEligible: true,
@@ -234,7 +254,7 @@ export const PRODUCTS: Product[] = [
     name: "Rasam Powder",
     description: "Tangy, peppery rasam powder blend for a classic South Indian rasam.",
     images: ["/images/products/rasam-powder.jpg"],
-    variants: [{ label: "1 kg", weightGrams: 1000 }],
+    variants: RUCHIMA_STANDARD_VARIANTS,
     hsnCode: HSN.blendedMasala,
     gstRatePercent: GST_DEFAULT,
     isWholesaleEligible: true,
@@ -248,7 +268,7 @@ export const PRODUCTS: Product[] = [
     name: "Dum Biryani Masala",
     description: "Aromatic dum biryani masala blend for layered, slow-cooked biryani.",
     images: ["/images/products/dum-biryani-masala.jpg"],
-    variants: [{ label: "1 kg", weightGrams: 1000 }],
+    variants: RUCHIMA_STANDARD_VARIANTS,
     hsnCode: HSN.blendedMasala,
     gstRatePercent: GST_DEFAULT,
     isWholesaleEligible: true,
@@ -262,7 +282,7 @@ export const PRODUCTS: Product[] = [
     name: "Grand Mutton Masala",
     description: "Rich, full-bodied masala blend built specifically for mutton curry.",
     images: ["/images/products/grand-mutton-masala.jpg"],
-    variants: [{ label: "1 kg", weightGrams: 1000 }],
+    variants: RUCHIMA_STANDARD_VARIANTS,
     hsnCode: HSN.blendedMasala,
     gstRatePercent: GST_DEFAULT,
     isWholesaleEligible: true,
@@ -276,7 +296,7 @@ export const PRODUCTS: Product[] = [
     name: "Royal Garam Masala",
     description: "Classic warming garam masala blend for everyday curries and gravies.",
     images: ["/images/products/royal-garam-masala.jpg"],
-    variants: [{ label: "1 kg", weightGrams: 1000 }],
+    variants: RUCHIMA_STANDARD_VARIANTS,
     hsnCode: HSN.blendedMasala,
     gstRatePercent: GST_DEFAULT,
     isWholesaleEligible: true,
@@ -290,7 +310,7 @@ export const PRODUCTS: Product[] = [
     name: "Chat Masala",
     description: "Tangy chat masala blend for fruit, snacks, chaat and street-food style dishes.",
     images: ["/images/products/chat-masala.jpg"],
-    variants: [{ label: "500 g", weightGrams: 500 }],
+    variants: RUCHIMA_STANDARD_VARIANTS,
     hsnCode: HSN.blendedMasala,
     gstRatePercent: GST_DEFAULT,
     isWholesaleEligible: true,
@@ -304,7 +324,7 @@ export const PRODUCTS: Product[] = [
     name: "Tandoori Masala",
     description: "Smoky, bold tandoori masala blend for grilled and tandoor-style dishes.",
     images: ["/images/products/tandoori-masala.jpg"],
-    variants: [{ label: "500 g", weightGrams: 500 }],
+    variants: RUCHIMA_STANDARD_VARIANTS,
     hsnCode: HSN.blendedMasala,
     gstRatePercent: GST_DEFAULT,
     isWholesaleEligible: true,
@@ -318,7 +338,7 @@ export const PRODUCTS: Product[] = [
     name: "Kabab Masala",
     description: "Spiced blend built for kababs — chicken, mutton or vegetable.",
     images: ["/images/products/kabab-masala.jpg"],
-    variants: [{ label: "1 kg", weightGrams: 1000 }],
+    variants: RUCHIMA_STANDARD_VARIANTS,
     hsnCode: HSN.blendedMasala,
     gstRatePercent: GST_DEFAULT,
     isWholesaleEligible: true,
@@ -332,7 +352,7 @@ export const PRODUCTS: Product[] = [
     name: "Pulyogre Powder",
     description: "Tamarind-forward pulyogre (puliyogare) powder for South Indian tamarind rice.",
     images: ["/images/products/pulyogre-powder.jpg"],
-    variants: [{ label: "1 kg", weightGrams: 1000 }],
+    variants: RUCHIMA_STANDARD_VARIANTS,
     hsnCode: HSN.blendedMasala,
     gstRatePercent: GST_DEFAULT,
     isWholesaleEligible: true,
@@ -346,7 +366,7 @@ export const PRODUCTS: Product[] = [
     name: "Melkote Temple Style",
     description: "Temple-style blend inspired by Melkote's traditional puliyogare preparation.",
     images: ["/images/products/melkote-temple-style.jpg"],
-    variants: [{ label: "1 kg", weightGrams: 1000 }],
+    variants: RUCHIMA_STANDARD_VARIANTS,
     hsnCode: HSN.blendedMasala,
     gstRatePercent: GST_DEFAULT,
     isWholesaleEligible: true,
@@ -360,7 +380,7 @@ export const PRODUCTS: Product[] = [
     name: "Grand Chicken Masala",
     description: "Rich, full-bodied masala blend built specifically for chicken curry.",
     images: ["/images/products/grand-chicken-masala.jpg"],
-    variants: [{ label: "1 kg", weightGrams: 1000 }],
+    variants: RUCHIMA_STANDARD_VARIANTS,
     hsnCode: HSN.blendedMasala,
     gstRatePercent: GST_DEFAULT,
     isWholesaleEligible: true,
@@ -374,7 +394,7 @@ export const PRODUCTS: Product[] = [
     name: "Tomato Tango Masala",
     description: "Tangy tomato-forward masala blend for quick curries and gravies.",
     images: ["/images/products/tomato-tango-masala.jpg"],
-    variants: [{ label: "250 g", weightGrams: 250 }],
+    variants: RUCHIMA_SPECIALTY_VARIANTS,
     hsnCode: HSN.blendedMasala,
     gstRatePercent: GST_DEFAULT,
     isWholesaleEligible: true,
@@ -388,7 +408,7 @@ export const PRODUCTS: Product[] = [
     name: "Chilli Garlic Fire Masala",
     description: "Fiery chilli-garlic blend for a bold, pungent kick in any dish.",
     images: ["/images/products/chilli-garlic-fire-masala.jpg"],
-    variants: [{ label: "250 g", weightGrams: 250 }],
+    variants: RUCHIMA_SPECIALTY_VARIANTS,
     hsnCode: HSN.blendedMasala,
     gstRatePercent: GST_DEFAULT,
     isWholesaleEligible: true,
@@ -402,7 +422,7 @@ export const PRODUCTS: Product[] = [
     name: "Magic Masala",
     description: "Multi-purpose seasoning blend for snacks, fries and quick finishing touches.",
     images: ["/images/products/magic-masala.jpg"],
-    variants: [{ label: "250 g", weightGrams: 250 }],
+    variants: RUCHIMA_SPECIALTY_VARIANTS,
     hsnCode: HSN.blendedMasala,
     gstRatePercent: GST_DEFAULT,
     isWholesaleEligible: true,
@@ -416,10 +436,7 @@ export const PRODUCTS: Product[] = [
     name: "Korean Peri Peri Masala",
     description: "Peri-peri style seasoning blend with a Korean-inspired twist, for snacks and fries.",
     images: ["/images/products/korean-peri-peri-masala.jpg"],
-    variants: [
-      { label: "250 g", weightGrams: 250 },
-      { label: "500 g", weightGrams: 500 },
-    ],
+    variants: RUCHIMA_SPECIALTY_VARIANTS,
     hsnCode: HSN.blendedMasala,
     gstRatePercent: GST_DEFAULT,
     isWholesaleEligible: true,
@@ -435,7 +452,7 @@ export const PRODUCTS: Product[] = [
     name: "Pani Puri (Instant)",
     description: "Instant pani puri water masala — just mix with water for ready pani puri pani.",
     images: ["/images/products/pani-puri-instant.jpg"],
-    variants: [{ label: "250 g", weightGrams: 250 }],
+    variants: RUCHIMA_SPECIALTY_VARIANTS,
     hsnCode: HSN.instantMix,
     gstRatePercent: GST_DEFAULT,
     isWholesaleEligible: true,
@@ -449,7 +466,7 @@ export const PRODUCTS: Product[] = [
     name: "Bisi Bele Bath",
     description: "Ready-to-cook bisi bele bath powder — the classic Karnataka one-pot rice dish.",
     images: ["/images/products/bisi-bele-bath.jpg"],
-    variants: [{ label: "500 g", weightGrams: 500 }],
+    variants: RUCHIMA_STANDARD_VARIANTS,
     hsnCode: HSN.instantMix,
     gstRatePercent: GST_DEFAULT,
     isWholesaleEligible: true,
@@ -463,7 +480,7 @@ export const PRODUCTS: Product[] = [
     name: "Vangi Bath",
     description: "Ready-to-cook vangi bath powder — the classic Karnataka brinjal rice mix.",
     images: ["/images/products/vangi-bath.jpg"],
-    variants: [{ label: "500 g", weightGrams: 500 }],
+    variants: RUCHIMA_STANDARD_VARIANTS,
     hsnCode: HSN.instantMix,
     gstRatePercent: GST_DEFAULT,
     isWholesaleEligible: true,

@@ -79,12 +79,21 @@ export function ProductDetail({ product }: { product: Product }) {
 
         <div className="mt-5">
           {priceKnown ? (
-            <p className="text-2xl font-bold text-terracotta">
-              {formatINR(pricing!.sellingPrice)}
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <span className="text-3xl font-bold text-cumin">
+                {formatINR(pricing!.sellingPrice)}
+              </span>
               {pricing!.originalPrice && pricing!.originalPrice > pricing!.sellingPrice && (
-                <span className="price-strike ml-2 text-base">{formatINR(pricing!.originalPrice)}</span>
+                <>
+                  <span className="price-strike text-lg text-soft">
+                    {formatINR(pricing!.originalPrice)}
+                  </span>
+                  <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-800">
+                    {Math.round(((pricing!.originalPrice - pricing!.sellingPrice) / pricing!.originalPrice) * 100)}% OFF
+                  </span>
+                </>
               )}
-            </p>
+            </div>
           ) : (
             <p className="text-lg font-semibold text-soft">Price on request</p>
           )}
@@ -98,29 +107,37 @@ export function ProductDetail({ product }: { product: Product }) {
           )}
         </div>
 
-        {hasVariants ? (
-          <div className="mt-4">
-            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-soft">Pack size</p>
+        {hasVariants && (
+          <div className="mt-5">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-bold uppercase tracking-wider text-soft">Select Pack Size (Business Standard)</p>
+              <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                Bulk discounts up to 50%
+              </span>
+            </div>
             <div className="flex flex-wrap gap-2">
               {product.variants.map((v) => (
                 <button
                   key={v.label}
                   type="button"
                   onClick={() => setVariantLabel(v.label)}
-                  className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
+                  className={`rounded-xl border px-3 py-1.5 text-xs font-bold transition flex items-center gap-1.5 ${
                     variantLabel === v.label
-                      ? "border-terracotta bg-terracotta/10 text-paprika"
-                      : "border-line text-soft hover:border-terracotta/40"
+                      ? "border-terracotta bg-terracotta/10 text-paprika shadow-xs"
+                      : "border-line text-soft hover:border-terracotta/40 hover:bg-stone-50"
                   }`}
                   aria-pressed={variantLabel === v.label}
                 >
-                  {v.label}
+                  <span>{v.label}</span>
+                  {v.weightGrams >= 5000 && (
+                    <span className="text-[9px] uppercase font-bold text-terracotta bg-terracotta/10 px-1 py-0.2 rounded">
+                      Wholesale
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
           </div>
-        ) : (
-          <p className="mt-4 text-sm text-soft">Pack size: {product.variants[0]?.label}</p>
         )}
 
         <div className="mt-6 flex items-center gap-3">
