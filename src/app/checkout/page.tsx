@@ -210,7 +210,7 @@ export default function CheckoutPage() {
           currency: order.currency,
           name: BUSINESS.name,
           prefill: { name: order.customerName, contact: order.customerPhone },
-          theme: { color: "#7A2E2E" },
+          theme: { color: "#B3261E" },
           handler: (result) => {
             void verifyPayment(result);
           },
